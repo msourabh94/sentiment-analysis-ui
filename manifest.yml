@@ -1,0 +1,7 @@
+applications:
+- name: sentimentanalysis-ui
+  path: build
+  buildpack: staticfile_buildpack
+  memory: 64m
+  routes:
+    - route: sentimentanalysis-ui.cfapps.io
