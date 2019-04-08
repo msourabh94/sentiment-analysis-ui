@@ -5,8 +5,8 @@ const ReactHighcharts = require('react-highcharts'); // Expects that Highcharts 
 const axios = require('axios');
 
 
-let topicData = [], reasonData = [];
-let topicChartData = [], reasonChartData = [];
+let topicData = [], reasonData = [], topicReasonData = [];
+let topicChartData = [], reasonChartData = [], topicReasonChartData = [], listOfCategories = [];
 let serviceUrl = "https://sentimentanalysis.cfapps.io";
 //let serviceUrl = "http://localhost:8080";
 
@@ -16,7 +16,8 @@ class App extends Component {
 		super(props);
 		this.state = {
 			topicData: [],
-			reasonData: []
+			reasonData: [],
+			topicReasonData: []
 		};
 		axios.get(serviceUrl + '/getTopicData')
 			.then(response => {
@@ -29,10 +30,20 @@ class App extends Component {
 						console.log(response.data);
 						reasonData = response.data;
 						console.log(reasonChartData);
-						this.setState({
-							topicData: topicData,
-							reasonData: reasonData
-						});
+						axios.get(serviceUrl + '/getTopicReasonData?topicMaxCount=5')
+							.then(response => {
+								console.log(response.data);
+								topicReasonData = response.data;
+								console.log(topicReasonData);
+								this.setState({
+									topicData: topicData,
+									reasonData: reasonData,
+									topicReasonData: topicReasonData
+								});
+							})
+							.catch(function (error) {
+								console.log(error);
+							});
 					})
 					.catch(function (error) {
 						console.log(error);
@@ -44,10 +55,12 @@ class App extends Component {
 	}
 
 	render() {
-		const { topicData, reasonData } = this.state;
+		const { topicData, reasonData, topicReasonData } = this.state;
+		console.log(topicReasonData);
 
 		topicData.forEach(function (topic) {
 			topicChartData.push({
+				//"x": topic['topicName'],
 				"y": topic['counter'],
 				"name": topic['topicName']
 			});
@@ -130,10 +143,65 @@ class App extends Component {
 			}]
 		}
 
+		let chartTopicReasonData = {
+			"categoryList": [],
+			"seriesDataList": []
+		};
+		if (topicReasonData != null) {
+			chartTopicReasonData = topicReasonData["topicReasonChartData"];
+			console.log(topicReasonData);
+		}
+
+		console.log(chartTopicReasonData);
+
+
+		let topicReasonOptions = {
+			chart: {
+				type: 'bar'
+			},
+			title: {
+				text: 'Topic Reason Rating - Sentiment Analysis'
+			},
+			subtitle: {
+				text: ''
+			},
+			xAxis: {
+				categories: chartTopicReasonData && chartTopicReasonData["categoryList"],
+				title: {
+					text: null
+				}
+			},
+			yAxis: {
+				min: 0,
+				title: {
+					text: 'Topic Names',
+					align: 'high'
+				},
+				labels: {
+					overflow: 'justify'
+				}
+			},
+			tooltip: {
+				valueSuffix: ' comments'
+			},
+			plotOptions: {
+				bar: {
+					dataLabels: {
+						enabled: true
+					}
+				}
+			},
+			credits: {
+				enabled: false
+			},
+			series: chartTopicReasonData && chartTopicReasonData["seriesDataList"]
+		}
+
 		return (
 			<div>
-				<ReactHighcharts config={topicOptions}></ReactHighcharts>
-				<ReactHighcharts config={reasonOptions}></ReactHighcharts>
+				<ReactHighcharts config={topicReasonOptions}></ReactHighcharts>
+				{/* <ReactHighcharts config={topicOptions}></ReactHighcharts>
+				<ReactHighcharts config={reasonOptions}></ReactHighcharts> */}
 				{/*You can get reference to the chart instance as shown above using onRef. This allows you to access all chart properties and methods*/}
 			</div>
 		);
